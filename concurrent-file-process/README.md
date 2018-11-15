@@ -1,13 +1,14 @@
 # Concurrent File Process
 
-To execute this program you need to create a directory called ***poc*** in the temp directory of your system. In linux it would be:
+By default to execute this program you need to create a directory called ***poc*** in the temp directory of your system, but this can be configured to another directory. In linux it would be:
 
 ```
 /tmp/poc
 ```
 
-The program creates a random number of files (max 50) in the directory, writing a random number in each file (max value 3).
 
-After that the program process the files in batches of 5, delegating each file to a goroutine, which will read the file content, and make the goroutine sleep for that amount of time (seconds). 
+The program creates a random number (configurable) of files in the directory, writing a random number (configurable) in each file. Then the program processes the files, opening a goroutine which process each file. It also has an implementation to process files in batches of a configurable size.
 
-At the end of the process of the file the goroutine writes a message to a channel, and at the end of thr program all the messages are shown.
+The process of a file consists in opening and reading a value from it that represents a number of seconds to make the goroutine sleep, than sleep, and after waking up write a message on a channel.
+
+At the end all the messages are read in the main func.
