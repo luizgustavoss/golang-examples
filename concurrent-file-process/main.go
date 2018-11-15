@@ -11,14 +11,18 @@ import (
 	"time"
 )
 
-var controle sync.WaitGroup
+var syncControl sync.WaitGroup
+var randomFilesQuantity = 100
+var maxSleepTime = 10
+var chunkFileSize = 5
+var baseDir = os.TempDir() + "/poc"
 
 func configureRandomSeed() {
 	now := time.Now()
 	rand.Seed(now.UnixNano())
 }
 
-func generateFileName(baseDir string, fileIndex int) string {
+func generateFileName(fileIndex int) string {
 	filePath := fmt.Sprintf("%s/file%d.%s", baseDir, fileIndex, "txt")
 	return filePath
 }
@@ -33,22 +37,22 @@ func createFile(filePath string) *os.File {
 }
 
 func writeRandomValueInFile(file *os.File) {
-	file.WriteString(strconv.Itoa(rand.Intn(5)))
+	file.WriteString(strconv.Itoa(rand.Intn(maxSleepTime)))
 }
 
-func createRandomFiles(baseDir string) {
+func createRandomFiles() {
 	configureRandomSeed()
-	numberOfFiles := rand.Intn(50)
+	numberOfFiles := rand.Intn(randomFilesQuantity)
 	for fileIndex := 0; fileIndex < numberOfFiles; fileIndex++ {
-		filePath := generateFileName(baseDir, fileIndex)
+		filePath := generateFileName(fileIndex)
 		file := createFile(filePath)
 		writeRandomValueInFile(file)
 		defer file.Close()
 	}
 }
 
-func processFiles(baseDir string) []chan string {
-	files := readRandomFiles(baseDir)
+func processFiles() []chan string {
+	files := readRandomFiles()
 	if len(files) < 1 {
 		fmt.Printf("There are no files to process! \n\n")
 		return make([]chan string, 0)
@@ -65,7 +69,6 @@ func printFileSetInfo(files []string) {
 
 func processFilesAsynchronously(files []string) []chan string {
 
-	var chunkFileSize = 5
 	numberOfPenddingFiles := len(files)
 	printFileSetInfo(files)
 
@@ -107,11 +110,11 @@ func processChunk(filesChunk []string) []chan string {
 		chans[i] = make(chan string, 1)
 	}
 	for i := 0; i < chunkSize; i++ {
-		controle.Add(1)
+		syncControl.Add(1)
 		fmt.Printf("Process: %s \n", filesChunk[i])
-		go processFile(&controle, chans[i], filesChunk[i])
+		go processFile(&syncControl, chans[i], filesChunk[i])
 	}
-	controle.Wait()
+	syncControl.Wait()
 	return chans
 }
 
@@ -122,8 +125,8 @@ func readFileContentAsNumber(fileName string) int {
 	return data
 }
 
-func processFile(controle *sync.WaitGroup, c chan<- string, fileName string) {
-	defer controle.Done()
+func processFile(syncControl *sync.WaitGroup, c chan<- string, fileName string) {
+	defer syncControl.Done()
 	seconds := readFileContentAsNumber(fileName)
 	if seconds > 0 {
 		time.Sleep(time.Duration(seconds) * time.Second)
@@ -131,7 +134,7 @@ func processFile(controle *sync.WaitGroup, c chan<- string, fileName string) {
 	c <- fmt.Sprintf("Process File: %s | timeToSleep: %d", fileName, seconds)
 }
 
-func readRandomFiles(baseDir string) []string {
+func readRandomFiles() []string {
 	var files []string
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		files = append(files, path)
@@ -145,9 +148,8 @@ func readRandomFiles(baseDir string) []string {
 
 func main() {
 
-	baseDir := os.TempDir() + "/poc"
-	createRandomFiles(baseDir)
-	channels := processFiles(baseDir)
+	createRandomFiles()
+	channels := processFiles()
 
 	channlesLength := len(channels)
 	for i := 0; i < channlesLength; i++ {
