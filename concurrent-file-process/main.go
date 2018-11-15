@@ -49,6 +49,10 @@ func createRandomFiles(baseDir string) {
 
 func processFiles(baseDir string) []chan string {
 	files := readRandomFiles(baseDir)
+	if len(files) < 1 {
+		fmt.Printf("There are no files to process! \n\n")
+		return make([]chan string, 0)
+	}
 	return processFilesAsynchronously(files)
 }
 
