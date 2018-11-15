@@ -90,7 +90,7 @@ func processFilesAsynchronously(files []string) []chan string {
 
 		filesChunk := make([]string, chunkSize)
 		copy(filesChunk, files[0:chunkSize])
-		copy(files, append(files[chunkSize+1:]))
+		copy(files, append(files[chunkSize:]))
 
 		chans := processChunk(filesChunk)
 		channels = append(channels, chans...)
