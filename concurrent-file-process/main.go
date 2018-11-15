@@ -49,7 +49,7 @@ func createRandomFiles(baseDir string) {
 
 func processFiles(baseDir string) []chan string {
 	files := readRandomFiles(baseDir)
-	return processFilesAsynchronously(append(files[1:])) // remover o primeiro item que é o próprio diretório
+	return processFilesAsynchronously(files)
 }
 
 func printFileSetInfo(files []string) {
@@ -136,7 +136,7 @@ func readRandomFiles(baseDir string) []string {
 	if err != nil {
 		panic(err)
 	}
-	return files
+	return append(files[1:]) //ignore first item (dir)
 }
 
 func main() {
