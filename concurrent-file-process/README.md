@@ -12,3 +12,9 @@ The program creates a random number (configurable) of files in the directory, wr
 The process of a file consists in opening and reading a value from it that represents a number of seconds to make the goroutine sleep, than sleep, and after waking up write a message on a channel.
 
 At the end all the messages are read in the main func.
+
+Once you've cloned the repository, enter golang-examples and execute:
+
+```
+go run concurrent-file-process/main.go
+```
