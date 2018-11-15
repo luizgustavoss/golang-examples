@@ -12,9 +12,9 @@ import (
 )
 
 var syncControl sync.WaitGroup
-var randomFilesQuantity = 100
-var maxSleepTime = 10
-var chunkFileSize = 5
+var randomFilesQuantity = 1000
+var maxSleepTime = 20
+var chunkFileSize = 100
 var baseDir = os.TempDir() + "/poc"
 
 func configureRandomSeed() {
@@ -67,7 +67,7 @@ func printFileSetInfo(files []string) {
 	}
 }
 
-func processFilesAsynchronously(files []string) []chan string {
+func processFilesAsynchronouslyInBatches(files []string) []chan string {
 
 	numberOfPenddingFiles := len(files)
 	printFileSetInfo(files)
@@ -98,6 +98,26 @@ func processFilesAsynchronously(files []string) []chan string {
 		chans := processChunk(filesChunk)
 		channels = append(channels, chans...)
 	}
+	return channels
+}
+
+func processFilesAsynchronously(files []string) []chan string {
+
+	numberOfPenddingFiles := len(files)
+	printFileSetInfo(files)
+
+	channels := make([]chan string, numberOfPenddingFiles)
+
+	for i := range channels {
+		channels[i] = make(chan string, 1)
+	}
+	for i := 0; i < numberOfPenddingFiles; i++ {
+		syncControl.Add(1)
+		fmt.Printf("Process: %s \n", files[i])
+		go processFile(&syncControl, channels[i], files[i])
+	}
+	syncControl.Wait()
+
 	return channels
 }
 
